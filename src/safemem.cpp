@@ -61,17 +61,18 @@ void* safe_malloc(size_t size) {
     if (index > 7) {
         return map_memory(size);
     }
-
-    // 3. Try to pop a block from the free list
-    if (free_lists[index] != nullptr) {
-        FreeBlock* block = free_lists[index]; // Save the current head
-        free_lists[index] = block->next;      // Update head to the next block
-        return block;                         // Return the block to user
+    
+    //If list empty :: Fill it first
+    if(free_lists[index]==nullptr){
+	    refill_slab(index);
+	    // if still empty after Refill, the OS is out of memory
+	    if(free_lists[index]==nullptr){
+		return nullptr;
+	    }
     }
+    //Pop a block from the list
+    FreeBlock* block=free_lists[index];
+    free_lists[index]=block->next;
 
-    // 4. List is empty! We need to get more memory.
-    if (free_lists[index] == nullptr) {
-       refill_slab(index);
-    }  
-    return nullptr;  
+    return block;
 }
