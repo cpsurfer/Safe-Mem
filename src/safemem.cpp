@@ -27,7 +27,7 @@ static void refill_slab(size_t index) {
     size_t total_block_size = sizeof(BlockHeader) + data_size; // The space we actually take
 
     // 2. Request a standard 4KB page from the OS
-    size_t page_size = 4096;
+    size_t page_size = 128*1024;
     char* memory = (char*)map_memory(page_size);
 
     if (memory == nullptr) {

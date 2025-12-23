@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Iinclude -Wall -Wextra -std=c++17
+CXXFLAGS = -Iinclude -Wall -Wextra -std=c++17 -O3
 
 # The final executable
 test_driver: src/safemem.o test/test_driver.o
@@ -9,5 +9,9 @@ test_driver: src/safemem.o test/test_driver.o
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+
+benchmark: src/safemem.o test/benchmark.o
+	$(CXX) $(CXXFLAGS) src/safemem.o test/benchmark.o -o benchmark
+
 clean:
-	rm -f src/*.o test/*.o test_driver
+	rm -f src/*.o test/*.o test_driver benchmark
