@@ -1,6 +1,8 @@
 #include "safemem.h"
+#include <cstddef>
 #include <sys/mman.h>
-#include "internal.h" // We need this to know what 'FreeBlock' is
+#include "internal.h"
+#include <iostream>
 
 // Array of free lists, one for each size class.
 // Index 0: 16 bytes, Index 1: 32 bytes ... Index 7: 128 bytes
@@ -19,10 +21,10 @@ void* map_memory(size_t size) {
 }
 
 // Helper: Refill the free list for a given index by allocating a new page
-// and slicing it into blocks.
 static void refill_slab(size_t index) {
-    // 1. Calculate the block size for this list (e.g., Index 0 -> 16 bytes)
-    size_t block_size = (index + 1) * 16;
+    // 1. Calculate sizes
+    size_t data_size = (index + 1) * 16; // The space the user gets
+    size_t total_block_size = sizeof(BlockHeader) + data_size; // The space we actually take
 
     // 2. Request a standard 4KB page from the OS
     size_t page_size = 4096;
@@ -32,15 +34,20 @@ static void refill_slab(size_t index) {
         return; // Out of memory!
     }
 
-    // 3. Carve the page into linked blocks
-    size_t block_count = page_size / block_size;
-    FreeBlock* head = (FreeBlock*)memory;
+    // 3. Carve the page into linked blocks    
+    size_t block_count = page_size / total_block_size;
+    
+    // First block setup: Skip the header to find the user pointer
+    FreeBlock* head = (FreeBlock*)(memory + sizeof(BlockHeader));
     FreeBlock* current = head;
 
     // Link each block to the next one
     for (size_t i = 1; i < block_count; ++i) {
-        char* next_addr = memory + (i * block_size);
-        FreeBlock* next_block = (FreeBlock*)next_addr;
+        // Calculate start of next block (Header + Data)
+        char* next_addr = memory + (i * total_block_size);
+        
+        // The user pointer is AFTER the header
+        FreeBlock* next_block = (FreeBlock*)(next_addr + sizeof(BlockHeader));
 
         current->next = next_block;
         current = next_block;
@@ -62,17 +69,42 @@ void* safe_malloc(size_t size) {
         return map_memory(size);
     }
     
-    //If list empty :: Fill it first
-    if(free_lists[index]==nullptr){
-	    refill_slab(index);
-	    // if still empty after Refill, the OS is out of memory
-	    if(free_lists[index]==nullptr){
-		return nullptr;
-	    }
+    // If list empty :: Fill it first
+    if(free_lists[index] == nullptr) {
+        refill_slab(index);
+        // if still empty after Refill, the OS is out of memory
+        if(free_lists[index] == nullptr) {
+            return nullptr;
+        }
     }
-    //Pop a block from the list
-    FreeBlock* block=free_lists[index];
-    free_lists[index]=block->next;
+    
+    // Pop a block from the list
+    // Renamed 'block' to 'node' to match usage below
+    FreeBlock* node = free_lists[index];
+    free_lists[index] = node->next;
 
-    return block;
+    // Write the header info
+    BlockHeader* header = (BlockHeader*)((char*)node - sizeof(BlockHeader));
+    header->size = (index + 1) * 16;
+    header->magic = MAGIC_NUM;
+
+    return (void*)node;
+}
+
+void safe_free(void* ptr) {
+    if(ptr == nullptr) return;
+
+    // 1. Check Header
+    BlockHeader* header = (BlockHeader*)((char*)ptr - sizeof(BlockHeader));
+    
+    if(header->magic != MAGIC_NUM) {
+        std::cerr << "[SafeMem Error] Double free or memory corruption detected at " << ptr << "\n";
+        return;
+    }
+
+    // 2. Return to list
+    size_t index = (header->size / 16) - 1;
+    FreeBlock* node = (FreeBlock*)ptr;
+    node->next = free_lists[index];
+    free_lists[index] = node;
 }

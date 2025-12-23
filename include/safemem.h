@@ -9,4 +9,7 @@ void* map_memory(size_t size);
 // Our custom allocator function
 void* safe_malloc(size_t size);
 
+// Frees the memory pointed to by ptr
+void safe_free(void* ptr);
+
 #endif
