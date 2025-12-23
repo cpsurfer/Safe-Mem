@@ -66,7 +66,17 @@ void* safe_malloc(size_t size) {
 
     // 2. Handle Large Allocations
     if (index > 7) {
-        return map_memory(size);
+        size_t total_size = sizeof(BlockHeader) + size;
+        void* ptr = map_memory(total_size);
+        if (ptr == nullptr) return nullptr;
+
+        // Write the header at the very start
+        BlockHeader* header = (BlockHeader*)ptr;
+        header->size = size;
+        header->magic = MAGIC_NUM;
+
+        // Return the memory just AFTER the header
+        return (void*)(header + 1);
     }
     
     // If list empty :: Fill it first
@@ -104,6 +114,19 @@ void safe_free(void* ptr) {
 
     // 2. Return to list
     size_t index = (header->size / 16) - 1;
+
+    // --- FOR LARGE BLOCKS ---
+    if (index > 7) {
+        // This is a large block. We don't put it in a free list.
+        // We return it to the OS using munmap.
+        size_t total_size = sizeof(BlockHeader) + header->size;
+
+        // Point to the START of the header (which is the start of the mmap region)
+        munmap((void*)header, total_size);
+        return;
+    }
+    // ----------------------------
+
     FreeBlock* node = (FreeBlock*)ptr;
     node->next = free_lists[index];
     free_lists[index] = node;
