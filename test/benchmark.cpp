@@ -1,56 +1,77 @@
-#include <iostream>
+#include <benchmark/benchmark.h>
 #include <vector>
-#include <chrono>
-#include <cstdlib>
+#include <algorithm>
+#include <random>
 #include "safemem.h"
 
-// Define how many allocations to perform
-const int NUM_ALLOCS = 1000000;
-
-int main() {
-    std::cout << "--- Benchmarking Safemem vs System Malloc ---\n";
-    std::cout << "Allocating " << NUM_ALLOCS << " blocks of 16 bytes...\n\n";
-
-    // --- TEST 1: System Malloc ---
-    std::vector<void*> std_ptrs;
-    std_ptrs.reserve(NUM_ALLOCS);
-
-    auto start_std = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < NUM_ALLOCS; i++) {
-        std_ptrs.push_back(std::malloc(16));
+/**
+ * 1. BASIC ALLOCATION BENCHMARK (The 1.8x Test)
+ * Measures how fast you can allocate and free sequentially.
+ */
+static void BM_SafeMalloc_Basic(benchmark::State& state) {
+    size_t size = state.range(0);
+    for (auto _ : state) {
+        void* p = safe_malloc(size);
+        benchmark::DoNotOptimize(p);
+        safe_free(p);
     }
-    auto end_std = std::chrono::high_resolution_clock::now();
-    
-    // Cleanup standard malloc
-    for (void* ptr : std_ptrs) std::free(ptr);
-
-    std::chrono::duration<double, std::milli> std_duration = end_std - start_std;
-    std::cout << "System malloc time: " << std_duration.count() << " ms\n";
-
-
-    // --- TEST 2: SafeMalloc ---
-    std::vector<void*> safe_ptrs;
-    safe_ptrs.reserve(NUM_ALLOCS);
-
-    auto start_safe = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < NUM_ALLOCS; i++) {
-        safe_ptrs.push_back(safe_malloc(16));
-    }
-    auto end_safe = std::chrono::high_resolution_clock::now();
-
-    // Cleanup safe malloc
-    for (void* ptr : safe_ptrs) safe_free(ptr);
-
-    std::chrono::duration<double, std::milli> safe_duration = end_safe - start_safe;
-    std::cout << "SafeMalloc time:    " << safe_duration.count() << " ms\n";
-
-    // --- RESULT ---
-    std::cout << "\n---------------------------------------------\n";
-    if (safe_duration < std_duration) {
-        std::cout << "WINNER: SafeMalloc is " << (std_duration.count() / safe_duration.count()) << "x faster!\n";
-    } else {
-        std::cout << "WINNER: System malloc (Optimization needed)\n";
-    }
-
-    return 0;
+    state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(size));
 }
+BENCHMARK(BM_SafeMalloc_Basic)->RangeMultiplier(8)->Range(8, 128);
+
+/**
+ * 2. MULTI-THREADED SCALING TEST
+ * Verifies that thread_local storage prevents lock contention.
+ * The "RealTime" metric is key here to see if threads fight each other.
+ */
+static void BM_ThreadScaling(benchmark::State& state) {
+    for (auto _ : state) {
+        void* p = safe_malloc(16);
+        benchmark::DoNotOptimize(p);
+        safe_free(p);
+    }
+}
+BENCHMARK(BM_ThreadScaling)->Threads(1)->Threads(2)->Threads(4)->Threads(8)->UseRealTime();
+
+/**
+ * 3. RANDOMIZED FRAGMENTATION TEST (The "Swiss Cheese" Test)
+ * Simulates real-world usage where memory isn't freed in a perfect order.
+ */
+static void BM_RandomFragmentation(benchmark::State& state) {
+    const int N = 1000;
+    std::vector<void*> ptrs(N);
+    std::vector<int> indices(N);
+    std::iota(indices.begin(), indices.end(), 0);
+    
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    for (auto _ : state) {
+        // Step 1: Sequential Allocation
+        for (int i = 0; i < N; ++i) {
+            ptrs[i] = safe_malloc(16);
+        }
+
+        // Step 2: Random Deallocation
+        std::shuffle(indices.begin(), indices.end(), g);
+        for (int idx : indices) {
+            safe_free(ptrs[idx]);
+        }
+    }
+}
+BENCHMARK(BM_RandomFragmentation)->Unit(benchmark::kMicrosecond);
+
+/**
+ * 4. JITTER & TAIL LATENCY TRACKING
+ * We add custom statistics to see the "Max" latency and Standard Deviation.
+ * This proves if your "Pre-warming" fixed the cold-start spikes.
+ */
+BENCHMARK(BM_SafeMalloc_Basic)
+    ->Arg(16)
+    ->Repetitions(10)
+    ->DisplayAggregatesOnly(false)
+    ->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+        return *std::max_element(v.begin(), v.end());
+    });
+
+BENCHMARK_MAIN();

@@ -1,99 +1,115 @@
 #include "safemem.h"
+#include "internal.h"
 #include <cstddef>
 #include <sys/mman.h>
-#include "internal.h"
 #include <iostream>
+#include <cassert>
+#include <errno.h>
 
-// Array of free lists, one for each size class.
-// Index 0: 16 bytes, Index 1: 32 bytes ... Index 7: 128 bytes
-static FreeBlock* free_lists[8];
+/**
+ * 1. False Sharing Protection
+ * We align the FreeBlock pointers to 64 bytes (cache line size) 
+ * so that different threads don't fight over the same memory line.
+ */
+struct alignas(64) ThreadFreeLists {
+    FreeBlock* heads[8] = {nullptr};
+};
 
+// 2. Thread-Local Storage (TLS)
+// This gives every CPU core its own private slab allocator.
+// No locks = No contention = Maximum HFT Speed.
+static thread_local ThreadFreeLists tls_lists;
+
+/**
+ * 3. Enhanced mmap with Hugepage Fallback
+ */
 void* map_memory(size_t size) {
+    // Attempt Hugepages first for HFT performance boost
     void* ptr = mmap(nullptr, size,
                      PROT_READ | PROT_WRITE,
-                     MAP_PRIVATE | MAP_ANONYMOUS,
+                     MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB,
                      -1, 0);
 
+    // Fallback to standard 4KB pages if Hugepages are disabled in kernel
     if (ptr == MAP_FAILED) {
-        return nullptr;
+        ptr = mmap(nullptr, size,
+                   PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANONYMOUS,
+                   -1, 0);
     }
-    return ptr;
+
+    return (ptr == MAP_FAILED) ? nullptr : ptr;
 }
 
-// Helper: Refill the free list for a given index by allocating a new page
+/**
+ * 4. Slab Refill (The "Slow Path")
+ */
 static void refill_slab(size_t index) {
-    // 1. Calculate sizes
-    size_t data_size = (index + 1) * 16; // The space the user gets
-    size_t total_block_size = sizeof(BlockHeader) + data_size; // The space we actually take
+    size_t data_size = (index + 1) * 16; 
+    size_t total_block_size = sizeof(BlockHeader) + data_size;
 
-    // 2. Request a standard 4KB page from the OS
-    size_t page_size = 128*1024;
-    char* memory = (char*)map_memory(page_size);
+    size_t slab_size = 2 * 1024 * 1024; 
+    char* memory = (char*)map_memory(slab_size);
 
-    if (memory == nullptr) {
-        return; // Out of memory!
+    if (__builtin_expect(memory == nullptr, 0)) return;
+
+    // --- ADD THE PRE-WARMING LOOP HERE ---
+    // This "touches" every 4KB window in the 2MB slab.
+    // It forces the kernel to physically map the Hugepage now.
+    for (size_t i = 0; i < slab_size; i += 4096) {
+        memory[i] = 0; 
     }
+    // -------------------------------------
 
-    // 3. Carve the page into linked blocks    
-    size_t block_count = page_size / total_block_size;
+    size_t block_count = slab_size / total_block_size;
     
-    // First block setup: Skip the header to find the user pointer
+    // Now carve the "warm" memory into blocks...
     FreeBlock* head = (FreeBlock*)(memory + sizeof(BlockHeader));
     FreeBlock* current = head;
 
-    // Link each block to the next one
     for (size_t i = 1; i < block_count; ++i) {
-        // Calculate start of next block (Header + Data)
         char* next_addr = memory + (i * total_block_size);
-        
-        // The user pointer is AFTER the header
         FreeBlock* next_block = (FreeBlock*)(next_addr + sizeof(BlockHeader));
 
         current->next = next_block;
         current = next_block;
     }
 
-    // Terminate the list
     current->next = nullptr;
-
-    // 4. Update the global array to point to our new list
-    free_lists[index] = head;
+    tls_lists.heads[index] = head;
 }
 
+/**
+ * 5. safe_malloc (The "Fast Path")
+ */
 void* safe_malloc(size_t size) {
-    // 1. Calculate the list index
+    if (__builtin_expect(size == 0, 0)) return nullptr;
+
     size_t index = (size + 15) / 16 - 1;
 
-    // 2. Handle Large Allocations
+    // Large Allocation Path (Direct kernel call)
     if (index > 7) {
         size_t total_size = sizeof(BlockHeader) + size;
         void* ptr = map_memory(total_size);
         if (ptr == nullptr) return nullptr;
 
-        // Write the header at the very start
         BlockHeader* header = (BlockHeader*)ptr;
         header->size = size;
         header->magic = MAGIC_NUM;
 
-        // Return the memory just AFTER the header
         return (void*)(header + 1);
     }
     
-    // If list empty :: Fill it first
-    if(free_lists[index] == nullptr) {
+    // Check local thread cache first
+    if(__builtin_expect(tls_lists.heads[index] == nullptr, 0)) {
         refill_slab(index);
-        // if still empty after Refill, the OS is out of memory
-        if(free_lists[index] == nullptr) {
-            return nullptr;
-        }
+        if(tls_lists.heads[index] == nullptr) return nullptr;
     }
     
-    // Pop a block from the list
-    // Renamed 'block' to 'node' to match usage below
-    FreeBlock* node = free_lists[index];
-    free_lists[index] = node->next;
+    // Pop from Thread-Local Free List
+    FreeBlock* node = tls_lists.heads[index];
+    tls_lists.heads[index] = node->next;
 
-    // Write the header info
     BlockHeader* header = (BlockHeader*)((char*)node - sizeof(BlockHeader));
     header->size = (index + 1) * 16;
     header->magic = MAGIC_NUM;
@@ -101,33 +117,32 @@ void* safe_malloc(size_t size) {
     return (void*)node;
 }
 
+/**
+ * 6. safe_free (Cache-Friendly Return)
+ */
 void safe_free(void* ptr) {
-    if(ptr == nullptr) return;
+    if(__builtin_expect(ptr == nullptr, 0)) return;
 
-    // 1. Check Header
     BlockHeader* header = (BlockHeader*)((char*)ptr - sizeof(BlockHeader));
     
-    if(header->magic != MAGIC_NUM) {
-        std::cerr << "[SafeMem Error] Double free or memory corruption detected at " << ptr << "\n";
+    // Integrity check
+    if(__builtin_expect(header->magic != MAGIC_NUM, 0)) {
+        std::cerr << "[SafeMem] Critical: Corruption/Double-Free at " << ptr << "\n";
         return;
     }
 
-    // 2. Return to list
     size_t index = (header->size / 16) - 1;
 
-    // --- FOR LARGE BLOCKS ---
+    // Large blocks are returned to OS
     if (index > 7) {
-        // This is a large block. We don't put it in a free list.
-        // We return it to the OS using munmap.
         size_t total_size = sizeof(BlockHeader) + header->size;
-
-        // Point to the START of the header (which is the start of the mmap region)
         munmap((void*)header, total_size);
         return;
     }
-    // ----------------------------
 
+    // Return block to the Thread-Local LIFO list
+    header->magic = 0; // Invalidate to prevent double-free
     FreeBlock* node = (FreeBlock*)ptr;
-    node->next = free_lists[index];
-    free_lists[index] = node;
+    node->next = tls_lists.heads[index];
+    tls_lists.heads[index] = node;
 }
