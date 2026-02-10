@@ -6,7 +6,7 @@ By aligning software logic with the physical architecture of modern CPUs and the
 
 ---
 
-## 🛠️ Tier-0 Engineering & Optimizations
+## 🛠️ Engineering & Optimizations
 
 SafeMem goes beyond traditional general-purpose heap management by incorporating industry-standard HFT optimizations.
 
