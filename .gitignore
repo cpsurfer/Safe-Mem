@@ -1,2 +1,4 @@
 *.o
 test_driver
+.cache/clangd/index
+.swp
