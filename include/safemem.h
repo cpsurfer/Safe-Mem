@@ -1,3 +1,4 @@
+//Copyright (c) 2026 cpsurfer[Rahul]. All rights reserved.
 #ifndef SAFEMEM_H
 #define SAFEMEM_H
 

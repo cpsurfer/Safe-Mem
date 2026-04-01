@@ -1,3 +1,5 @@
+//Copyright (c) 2026 cpsurfer[Rahul]. All rights reserved.
+
 #ifndef INTERNAL_H
 #define INTERNAL_H
 

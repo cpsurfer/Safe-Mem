@@ -1,6 +1,6 @@
+//Copyright (c) 2026 cpsurfer[Rahul]. All rights reserved.
 #include "safemem.h"
 #include "internal.h"
-#include <cstddef>
 #include <sys/mman.h>
 #include <iostream>
 #include <cassert>
@@ -11,6 +11,7 @@
  * We align the FreeBlock pointers to 64 bytes (cache line size) 
  * so that different threads don't fight over the same memory line.
  */
+//later may work on converting linked list to bit manipulation
 struct alignas(64) ThreadFreeLists {
     FreeBlock* heads[8] = {nullptr};
 };

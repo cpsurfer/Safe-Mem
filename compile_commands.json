@@ -1,0 +1,74 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-std=c++17",
+      "-O3",
+      "-msse4.2",
+      "-c",
+      "-o",
+      "src/safemem.o",
+      "src/safemem.cpp"
+    ],
+    "directory": "/home/tourist/Safemem",
+    "file": "/home/tourist/Safemem/src/safemem.cpp",
+    "output": "/home/tourist/Safemem/src/safemem.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-std=c++17",
+      "-O3",
+      "-msse4.2",
+      "-c",
+      "-o",
+      "test/test_driver.o",
+      "test/test_driver.cpp"
+    ],
+    "directory": "/home/tourist/Safemem",
+    "file": "/home/tourist/Safemem/test/test_driver.cpp",
+    "output": "/home/tourist/Safemem/test/test_driver.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-std=c++17",
+      "-O3",
+      "-msse4.2",
+      "-c",
+      "-o",
+      "test/benchmark.o",
+      "test/benchmark.cpp"
+    ],
+    "directory": "/home/tourist/Safemem",
+    "file": "/home/tourist/Safemem/test/benchmark.cpp",
+    "output": "/home/tourist/Safemem/test/benchmark.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-std=c++17",
+      "-O3",
+      "-msse4.2",
+      "-c",
+      "-o",
+      "test/simdtest.o",
+      "test/simdtest.cpp"
+    ],
+    "directory": "/home/tourist/Safemem",
+    "file": "/home/tourist/Safemem/test/simdtest.cpp",
+    "output": "/home/tourist/Safemem/test/simdtest.o"
+  }
+]
