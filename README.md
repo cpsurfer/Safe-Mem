@@ -1,4 +1,4 @@
-# ⚡ SafeMem: HFT-Grade Low-Latency Memory Allocator
+# ⚡ SafeMem: Low-Latency Memory Allocator
 
 SafeMem is an ultra-high-performance, slab-based C++ memory allocator engineered for the extreme requirements of **High-Frequency Trading (HFT)** and low-level systems programming.
 
