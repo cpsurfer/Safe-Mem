@@ -43,6 +43,11 @@ SafeMem goes beyond traditional general-purpose heap management by incorporating
 - 12-core Linux
 - 2.0 GHz CPU
 - `libbenchmark-dev`
+## Performance Benchmarks 📊
+
+![Safe-Mem Benchmark Results](./assets/benchmark_image.png)
+
+> **Test Environment:** Benchmarks were run on an Ubuntu 24.04 environment, pinned to a single core using `taskset` to minimize jitter.
 
 | Benchmark Task | Threads | Latency (Wall) | Throughput / Scaling |
 |---------------|---------|----------------|----------------------|
