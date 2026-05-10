@@ -1,24 +1,29 @@
-Copyright (c) 2026 cpsurfer
+Copyright (c) 2026 Rahul Sahu (cpsurfer)
 
-ALL RIGHTS RESERVED.
+SAFE-MEM RESTRICTED COMMUNITY LICENSE
 
-This software and all associated documentation files (the "Software") are the 
-exclusive property of cpsurfer. 
+1. PERMITTED USES
+You are granted a non-exclusive right to:
+   a) Use the Software for strictly non-commercial personal work, non-commercial academic research, non-commercial hobbyist purposes only.
+   b) Modify the Software solely for the purpose of submitting Pull Requests 
+      to the original repository (https://github.com/cpsurfer/Safemem).
+   c) Use this for any other purpose ONLY with prior explicit written consent from the author(cpsurfer).
 
-1. RESTRICTIONS
-No person or entity is granted any license or right to use, copy, modify, 
-merge, publish, distribute, sublicense, and/or sell copies of the Software. 
+3. STRICT PROHIBITIONS
+Any use not explicitly granted in Section 1 is prohibited. Specifically:
+   a) COMMERCIAL USE: Any use within a for-profit entity, including internal R&D,
+      evaluation, or benchmarking for commercial products, is strictly prohibited.
+   b) COMMERCIAL RESEARCH: Use for R&D within corporate entities or for-profit 
+      research institutions is strictly prohibited.
+   c) AI & LLM TRAINING: The Software, its source code, and logic shall NOT be 
+      used to train, fine-tune, or validate any Artificial Intelligence, 
+      Machine Learning models, or Large Language Models.
+   d) REDISTRIBUTION: You may not host or redistribute this code elsewhere 
+      without maintaining this exact license and original attribution.
 
-2. PROHIBITION OF USE
-Any use of the Software for any purpose—including but not limited to 
-commercial, personal, educational, or research purposes—is strictly prohibited 
-without prior written consent from the copyright holder.
+5. CONTRIBUTIONS
+By submitting a Pull Request, you grant the copyright holder (cpsurfer) 
+perpetual rights to use and incorporate your changes into the Software.
 
-3. NO WARRANTY
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+6. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS". THE AUTHOR IS NOT LIABLE FOR ANY DAMAGES.
