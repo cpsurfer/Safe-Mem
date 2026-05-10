@@ -23,7 +23,6 @@ if ptr:
     # Writing data to that memory (Advanced)
     char_ptr = ctypes.cast(ptr, ctypes.POINTER(ctypes.c_char))
     # Python-style data injection into your C++ slab
-    # (Writing 'Rahul' to the 8ns allocator)
     
     safemem_lib.safe_free(ptr)
     print("Memory freed successfully from Python!")
