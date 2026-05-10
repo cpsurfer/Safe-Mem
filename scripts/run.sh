@@ -9,11 +9,11 @@ if [ ! -f "Makefile" ]; then
     exit 1
 fi
 
-echo "🛠️  Cleaning and Building in RELEASE Mode..."
+echo "🛠️  Building Static & Shared Libraries (MODE: RELEASE)..."
 
+# Build everything
 make clean
 make MODE=release -j$(nproc) 
-
 
 echo "🧪 Running Hardware Safety Checks (SIMD)..."
 ./simdtest
@@ -21,12 +21,11 @@ echo "🧪 Running Hardware Safety Checks (SIMD)..."
 echo "✅ Running Functional Tests (Logic Validation)..."
 ./test_driver
 
-
 if [ -f "./benchmark" ]; then
     echo "📊 Running Performance Benchmarks (JSON Export)..."
-
     rm -f result.json
     
+    # Core pinning for accuracy
     echo "📌 Pinning to Isolated Core 1 for Maximum Accuracy..."
     taskset -c 1 ./benchmark --benchmark_out=result.json --benchmark_out_format=json
     
@@ -45,4 +44,4 @@ else
     echo "⚠️  Warning: benchmark binary not found, skipping performance tests..."
 fi
 
-echo "🏁 All tasks completed!"
+echo "🏁 All tasks completed! Your shared library (libfmem.so) is ready for Python/C."
