@@ -1,0 +1,37 @@
+name: Systems-Engineering CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: install dependencies
+
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libbenchmark-dev build-essential
+
+
+    - name: build project
+
+      run: make clean && make
+
+    - name: hardware safety check
+
+      run: ./simdtest
+
+    - name: logic and memory safety check
+
+      run: ./test_driver
+
+    - name: note on benchmarks
+
+      run: echo "Skipping benchmarks in CI to avoid noisy VM results."
