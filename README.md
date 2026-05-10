@@ -45,7 +45,7 @@ SafeMem goes beyond traditional general-purpose heap management by incorporating
 - `libbenchmark-dev`
 ## Performance Benchmarks 📊
 
-![Safe-Mem Benchmark Results](./assets/benchmark_image.png)
+![Safe-Mem Benchmark Results](./assets/benchmark_results.png)
 
 > **Test Environment:** Benchmarks were run on an Ubuntu 24.04 environment, pinned to a single core using `taskset` to minimize jitter.
 
