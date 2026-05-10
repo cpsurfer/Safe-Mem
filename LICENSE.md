@@ -19,7 +19,8 @@ Any use not explicitly granted in Section 1 is prohibited. Specifically:
       used to train, fine-tune, or validate any Artificial Intelligence, 
       Machine Learning models, or Large Language Models.
    d) REDISTRIBUTION: You may not host or redistribute this code elsewhere 
-      without maintaining this exact license and original attribution.
+      without a prior written permissions from the author. Even after that you have
+      to explicitly mention the author and original repository.
 
 5. CONTRIBUTIONS
 By submitting a Pull Request, you grant the copyright holder (cpsurfer) 
