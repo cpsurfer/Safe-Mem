@@ -10,3 +10,5 @@ test_driver
 result.json
 assets/*.png
 .venv/
+.cache/
+clangd/
