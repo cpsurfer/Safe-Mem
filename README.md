@@ -77,6 +77,9 @@ taskset -c 0-7 ./benchmark
 
 # Correctness & Memory Safety Validation
 ./test_driver
+
+# Verify benchmarks
+./benchmark
 ````
 ## 🛡️ Stability & Safety Features
 
