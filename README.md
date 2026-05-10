@@ -49,16 +49,6 @@ SafeMem goes beyond traditional general-purpose heap management by incorporating
 
 > **Test Environment:** Benchmarks were run on an Ubuntu 24.04 environment, pinned to a single core using `taskset` to minimize jitter.
 
-| Benchmark Task | Threads | Latency (Wall) | Throughput / Scaling |
-|---------------|---------|----------------|----------------------|
-| System `malloc` (16B) | 1 | ~100.00 ns | 1.0× (Baseline) |
-| SafeMem (16B) | 1 | **3.84 ns** | **27× Speedup** |
-| SafeMem (16B) | 8 | **0.707 ns** | **140× Aggregate Gain** |
-| Max Throughput (128B) | 1 | **3.91 ns** | **32.99 GiB/s** |
-
-> **Key Observation**  
-> A **0.127 ns standard deviation** across 10 million iterations confirms deterministic latency—critical for execution engines where microseconds define P&L.
-
 ---
 
 ## 🚀 Build & Run Guide
@@ -68,23 +58,19 @@ SafeMem goes beyond traditional general-purpose heap management by incorporating
 Install required build tools and Google Benchmark:
 
 ```bash
+# System tools (Ensure these are present)
 sudo apt-get update
-sudo apt-get install libbenchmark-dev build-essential
+sudo apt-get install build-essential cmake -y
 
-# Clean previous builds and compile all targets
-make clean && make
+# Python setup for charts
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pandas matplotlib seaborn
 
-# Hardware Safety Check (SIMD Alignment)
-./simdtest
+chmod +x scripts/run.sh
 
-# Performance Benchmark (Pinned to 8 Cores)
-taskset -c 0-7 ./benchmark
-
-# Correctness & Memory Safety Validation
-./test_driver
-
-# Verify benchmarks
-./benchmark
+# In the Root directory (~/Safemem) :
+sudo ./scripts/run.sh
 ````
 ## 🛡️ Stability & Safety Features
 
