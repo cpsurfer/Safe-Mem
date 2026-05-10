@@ -1,6 +1,9 @@
 CXX = g++
 
-# 1. Default Build Mode: Isse aap command line se change kar sakte hain
+# --- SYSTEM INSTALLATION PREFIX ---
+PREFIX ?= /usr/local
+
+# 1. Default Build Mode
 # Use: 'make MODE=release' or 'make MODE=debug'
 MODE ?= release
 
@@ -9,24 +12,25 @@ CXXFLAGS = -Iinclude -Wall -Wextra -std=c++17 -msse4.2
 
 # 3. Mode-specific Flags
 ifeq ($(MODE), release)
-    # Release Mode: Full Optimization + Debug checks off
-    # -O3: Maximum speed
-    # -DNDEBUG: Google Benchmark ki warning hatane ke liye
-    # -march=native: Aapke current CPU ke liye best instructions use karega
-    CXXFLAGS += -O3 -DNDEBUG -march=native
+	# Release Mode: Full Optimization + Debug checks off
+	CXXFLAGS += -O3 -DNDEBUG -march=native
 else
-    # Debug Mode: Symbol information + No optimization
-    # -g: GDB debugging ke liye symbols add karta hai
-    # -O0: Optimization band (debugging easy hoti hai)
-    CXXFLAGS += -g -O0
+	# Debug Mode: Symbol information + No optimization
+	CXXFLAGS += -g -O0
 endif
 
 LDFLAGS = -L/usr/local/lib -lbenchmark -lpthread
 
-# The final executables
-all: test_driver benchmark simdtest
+# The final targets (Added libfmem.a here)
+all: libfmem.a test_driver benchmark simdtest
 
-# Linker block: Objects se executable banana
+# --- LIBRARY GENERATION BLOCK ---
+# Static library create karne ka rule
+libfmem.a: src/safemem.o
+	ar rcs $@ $^
+	@echo "Static Library $@ generated successfully."
+
+# --- EXECUTABLE BLOCK ---
 simdtest: src/safemem.o test/simdtest.o
 	$(CXX) $(CXXFLAGS) $^ -o simdtest
 
@@ -40,6 +44,25 @@ test_driver: src/safemem.o test/test_driver.o
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Safely clean objects and binaries
+# --- CLEAN TARGET ---
+# Safely clean objects, binaries, AND the static library
 clean:
-	rm -f src/*.o test/*.o test_driver benchmark simdtest
+	rm -f src/*.o test/*.o test_driver benchmark simdtest libfmem.a
+
+# --- INSTALL TARGET ---
+.PHONY: install uninstall
+install: libfmem.a
+	@echo "Installing Safe-Mem globally..."
+	install -d $(PREFIX)/include
+	install -d $(PREFIX)/lib
+	install -m 644 include/safemem.h $(PREFIX)/include/
+	install -m 644 libfmem.a $(PREFIX)/lib/
+	@echo "Safe-Mem Installation Complete!"
+	@echo "You can now use '#include <safemem.h>' and link with '-lfmem' anywhere."
+
+# --- UNINSTALL TARGET ---
+uninstall:
+	@echo "Removing Safe-Mem from system..."
+	rm -f $(PREFIX)/include/safemem.h
+	rm -f $(PREFIX)/lib/libfmem.a
+	@echo "Safe-Mem successfully uninstalled."
