@@ -55,19 +55,26 @@ SafeMem goes beyond traditional general-purpose heap management by incorporating
 
 
 ```bash
-# System tools (Ensure these are present)
+# 1. System tools (Ensure these are present)
 sudo apt-get update
-sudo apt-get install build-essential cmake -y
+sudo apt-get install build-essential cmake libbenchmark-dev python3-venv -y
 
-# Python setup for charts
+# 2. Python setup for benchmark charts
 python3 -m venv .venv
 source .venv/bin/activate
 pip install pandas matplotlib seaborn
 
-chmod +x scripts/run.sh
+# 3. Build & Install Safe-Mem Core 
+# (Run in Root directory: ~/Safemem)
+# Note: Installing globally allows you to use #include <safemem.h> in any project.
+make clean
+make              # Compiles the static library and all test executables
+sudo make install # Installs safemem.h and libfmem.a system-wide
 
-# In the Root directory (~/Safemem) :
+# 4. Execute test suite and generate charts
+chmod +x scripts/run.sh
 sudo ./scripts/run.sh
+
 ````
 ## 🛡️ Stability & Safety Features
 
