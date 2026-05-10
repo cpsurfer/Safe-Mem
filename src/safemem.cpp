@@ -18,7 +18,7 @@ SOFTWARE*/
 struct alignas(64) ThreadFreeLists {
     FreeBlock* heads[8] = {nullptr};
 };
-.
+
 static thread_local ThreadFreeLists tls_lists;
 
 void* map_memory(size_t size) {
