@@ -80,8 +80,6 @@ g++ -O3 test_global.cpp -lfmem -o test_global
 ./test_global
 
 #6. You can use safemem in python too
-# First create a shared library
-g++ -fPIC -shared src/safemem.cpp -Iinclude -o libfmem.so
 # Now you can create a python file and feel the speed of safemem in python.
 # How to run the test file given in test folder:
 python3 test/testpy.py
