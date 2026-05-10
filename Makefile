@@ -21,7 +21,7 @@ else
     CXXFLAGS += -g -O0
 endif
 
-LDFLAGS = -lbenchmark -lpthread
+LDFLAGS = -L/usr/local/lib -lbenchmark -lpthread
 
 # The final executables
 all: test_driver benchmark simdtest
