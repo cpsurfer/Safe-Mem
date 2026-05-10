@@ -68,7 +68,7 @@ static void refill_slab(size_t index) {
     tls_lists.heads[index] = head;
 }
 
-void* safe_malloc(size_t size) {
+void* safemem(size_t size) {
     if (__builtin_expect(size == 0, 0)) return nullptr;
 
     size_t index = (size + 15) / 16 - 1;
@@ -123,3 +123,5 @@ void safe_free(void* ptr) {
     node->next = tls_lists.heads[index];
     tls_lists.heads[index] = node;
 }
+
+

@@ -9,9 +9,9 @@ void print_addr(const char* label, void* ptr) {
 
 int main() {
     std::cout << "=== Test 1: Basic Allocation & Alignment ===\n";
-    void* p1 = safe_malloc(16);
-    void* p2 = safe_malloc(10); // Should round up to 16
-    void* p3 = safe_malloc(32); // Different size class
+    void* p1 = safemem(16);
+    void* p2 = safemem(10); // Should round up to 16
+    void* p3 = safemem(32); // Different size class
 
     assert(p1 != nullptr);
     assert(p2 != nullptr);
@@ -42,7 +42,7 @@ int main() {
     // 3. Ask for 16 bytes again.
     // If safe_free works, we should get the EXACT SAME block back.
     std::cout << "Requesting 16B again...\n";
-    void* p4 = safe_malloc(16);
+    void* p4 = safemem(16);
     print_addr("New 16B Block", p4);
 
     if (p4 == old_p1_address) {
@@ -54,7 +54,7 @@ int main() {
 
 
     std::cout << "\n=== Test 3: Large Allocations ===\n";
-    void* huge = safe_malloc(5000); // Should use mmap
+    void* huge = safemem(5000); // Should use mmap
     print_addr("Large Block", huge);
     assert(huge != nullptr);
     safe_free(huge); // Note: Current implementation just leaks this or crashes if not handled, 

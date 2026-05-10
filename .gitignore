@@ -1,10 +1,12 @@
+# Binaries and Objects
 *.o
+*.a
+benchmark
+simdtest
 test_driver
-.cache/clangd/index
-.swp
-.venv/
-__pycache__/
-*.pyc
-result.json
+*.tar.gz
 
-google-bench/
+# Charts and Results
+result.json
+assets/*.png
+.venv/
