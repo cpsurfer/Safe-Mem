@@ -5,7 +5,7 @@ set -e
 echo "🚀 Starting Safe-Mem Optimized Execution Suite..."
 
 if [ ! -f "Makefile" ]; then
-    echo "❌ Error: Makefile not found! Sahi directory mein check karein."
+    echo "❌ Error: Makefile not found! check in right library."
     exit 1
 fi
 
