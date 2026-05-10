@@ -53,9 +53,6 @@ SafeMem goes beyond traditional general-purpose heap management by incorporating
 
 ## 🚀 Build & Run Guide
 
-### 1️⃣ Prerequisites
-
-Install required build tools and Google Benchmark:
 
 ```bash
 # System tools (Ensure these are present)
