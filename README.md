@@ -75,6 +75,10 @@ sudo make install # Installs safemem.h and libfmem.a system-wide
 chmod +x scripts/run.sh
 sudo ./scripts/run.sh
 
+#5. Compile the program with -lfmem tag:
+g++ -O3 test_global.cpp -lfmem -o test_global
+./test_global
+
 ````
 ## 🛡️ Stability & Safety Features
 
