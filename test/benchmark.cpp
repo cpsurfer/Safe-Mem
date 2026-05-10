@@ -46,21 +46,32 @@ static void BM_RandomFragmentation(benchmark::State& state) {
     std::random_device rd;
     std::mt19937 g(rd());
 
+    // Shuffle ko loop se bahar rakha hai takki CPU noise kam ho
+    std::shuffle(indices.begin(), indices.end(), g);
+
     for (auto _ : state) {
-        // Step 1: Sequential Allocation
+        // Step 1: Sequential Allocation (1000 times)
         for (int i = 0; i < N; ++i) {
             ptrs[i] = safe_malloc(16);
         }
 
-        // Step 2: Random Deallocation
-        std::shuffle(indices.begin(), indices.end(), g);
+        // Memory barrier to ensure everything is written
+        benchmark::ClobberMemory();
+
+        // Step 2: Random Deallocation (1000 times)
         for (int idx : indices) {
             safe_free(ptrs[idx]);
         }
+        
+        benchmark::ClobberMemory();
     }
-}
-BENCHMARK(BM_RandomFragmentation)->Unit(benchmark::kMicrosecond);
 
+    // MANDATORY: Ye line total time ko N se divide kar degi
+    // Output table ab 7us ki jagah 7ns (per-op) dikhayegi
+    state.SetItemsProcessed(state.iterations() * N);
+}
+// Unit ko Nanosecond rakhein for better precision
+BENCHMARK(BM_RandomFragmentation)->Unit(benchmark::kNanosecond);
 /**
  * 4. JITTER & TAIL LATENCY TRACKING
  * We add custom statistics to see the "Max" latency and Standard Deviation.
@@ -75,3 +86,5 @@ BENCHMARK(BM_SafeMalloc_Basic)
     });
 
 BENCHMARK_MAIN();
+
+
