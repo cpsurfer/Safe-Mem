@@ -19,9 +19,10 @@ SafeMem is an ultra-high-performance, slab-based C++ memory allocator engineered
 | Single-thread allocation | 9.92-10.2 ns | **18-20 cycles** |
 | Standard deviation | 0.18 ns | **<1 cycle** |
 | Coefficient of variation (CV) | 1.8% | — |
-| Random fragmentation (1,000 allocs) | 11,991 ns total | **~12 ns per alloc** |
+| Random fragmentation (1,000 allocs) | 11,991 ns total (12ns per alloc) | **~22-25 cycles** |
 | 8-thread allocation | 19.5 ns | **39 cycles** |
 | Throughput (single thread) | 808 MiB/s | — |
+| Throughput (single thread - 128 bytes) | 12.55 GiB/s | — |
 
 ![Safe-Mem Benchmark Results](./assets/benchmark_results.png)
 
