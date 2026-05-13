@@ -1,14 +1,33 @@
-# ⚡ SafeMem: Low-Latency Memory Allocator
+# ⚡ Safe-Mem: Low-Latency Memory Allocator
 
-SafeMem is an ultra-high-performance, slab-based C++ memory allocator engineered for the extreme requirements of **High-Frequency Trading (HFT)** and low-level systems programming.
+**18-20 CPU Cycles | 0.18ns Jitter | 1.8% CV | 40M Allocations, Zero Loss**
 
-By aligning software logic with the physical architecture of modern CPUs and the Linux kernel, SafeMem achieves **sub-nanosecond allocation latencies**, outperforming the standard `glibc malloc` by up to **27×** in single-threaded environments.
+SafeMem is an ultra-high-performance, slab-based C++ memory allocator engineered for the extreme requirements of **High-Frequency Trading (HFT)** and low-level systems programming. By aligning software logic with the physical architecture of modern CPUs, SafeMem achieves allocation latencies as low as **9-10 nanoseconds** on 2GHz hardware — just **18-20 CPU cycles**.
+
+---
+
+## 📊 Performance Benchmarks
+
+**Test Environment**
+- 2.0 GHz CPU (throttled to ~1.2 GHz during test)
+- Ubuntu 24.04
+- Google Benchmark framework
+- Single core pinned via `taskset`
+
+| Metric | Value | CPU Cycles (at 2GHz) |
+|--------|-------|---------------------|
+| Single-thread allocation | 9.92-10.2 ns | **18-20 cycles** |
+| Standard deviation | 0.18 ns | **<1 cycle** |
+| Coefficient of variation (CV) | 1.8% | — |
+| Random fragmentation (1,000 allocs) | 11,991 ns total | **~12 ns per alloc** |
+| 8-thread allocation | 19.5 ns | **39 cycles** |
+| Throughput (single thread) | 808 MiB/s | — |
+
+![Safe-Mem Benchmark Results](./assets/benchmark_results.png)
 
 ---
 
 ## 🛠️ Engineering & Optimizations
-
-SafeMem goes beyond traditional general-purpose heap management by incorporating industry-standard HFT optimizations.
 
 ### 🔒 Lock-Free Multi-Threaded Scaling
 - Uses **Thread-Local Storage (TLS)** to give each CPU core its own private memory lane
@@ -26,33 +45,14 @@ SafeMem goes beyond traditional general-purpose heap management by incorporating
 - Guarantees the allocation fast path never incurs a page fault
 
 ### 🧬 Cache & Hardware Awareness
-- **SIMD-safe alignment**  
-  - All allocations are 16-byte aligned
-  - Verified using `_mm_load_si128` torture tests
-- **False sharing mitigation**  
-  - `alignas(64)` on thread-local metadata
-- **Inlined fast path**  
-  - Pointer pop logic is fully inlineable
-  - Allocation cost as low as **7 CPU cycles**
-
----
-
-## 📊 Performance Benchmarks (2026)
-
-**Test Environment**
-- 12-core Linux
-- 2.0 GHz CPU
-- `libbenchmark-dev`
-## Performance Benchmarks 📊
-
-![Safe-Mem Benchmark Results](./assets/benchmark_results.png)
-
-> **Test Environment:** Benchmarks were run on an Ubuntu 24.04 environment, pinned to a single core using `taskset` to minimize jitter.
+- **SIMD-safe alignment** — All allocations are 16-byte aligned, verified using `_mm_load_si128` torture tests
+- **False sharing mitigation** — `alignas(64)` on thread-local metadata
+- **Inlined fast path** — Pointer pop logic is fully inlineable
+- **No atomics on hot path** — Eliminates `lock cmpxchg` (15-30 cycles) and memory barriers (10-20 cycles)
 
 ---
 
 ## 🚀 Build & Run Guide
-
 
 ```bash
 # 1. System tools (Ensure these are present)
@@ -75,16 +75,15 @@ sudo make install # Installs safemem.h and libfmem.a system-wide
 chmod +x scripts/run.sh
 sudo ./scripts/run.sh
 
-#5. Compile the program with -lfmem tag:
-g++ -O3 test_global.cpp -lfmem -o test_global
-./test_global
+# 5. Compile your program with -lfmem flag
+g++ -O3 your_program.cpp -lfmem -o your_program
+./your_program
 
-#6. You can use safemem in python too
-# Now you can create a python file and feel the speed of safemem in python.
+# 6. Use SafeMem in Python
 # How to run the test file given in test folder:
 python3 test/testpy.py
 
-````
+```
 ## 🛡️ Stability & Safety Features
 
 ### Corruption Detection
