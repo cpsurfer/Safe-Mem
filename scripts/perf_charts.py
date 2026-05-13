@@ -50,7 +50,6 @@ def generate_charts(json_file):
     sns.lineplot(data=df, x='Size (Bytes)', y='Latency (ns)', marker='o', linewidth=2, color='#2ecc71')
     
     plt.title('Safe-Mem Allocation Latency', fontsize=14)
-    plt.axhline(y=8.5, color='r', linestyle='--', label='Target (8.5ns)') 
     plt.legend()
 
     os.makedirs('assets', exist_ok=True)
