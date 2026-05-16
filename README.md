@@ -56,6 +56,8 @@ SafeMem is an ultra-high-performance, slab-based C++ memory allocator engineered
 ## 🚀 Build & Run Guide
 
 ```bash
+#sudo permissions are required to allocate hugepages and configure CPU affinity
+
 # 1. System tools (Ensure these are present)
 sudo apt-get update
 sudo apt-get install build-essential cmake libbenchmark-dev python3-venv -y
@@ -84,6 +86,8 @@ g++ -O3 your_program.cpp -lfmem -o your_program
 # How to run the test file given in test folder:
 python3 test/testpy.py
 
+#7. To uninstall library from your system
+sudo make uninstall
 ```
 ## 🛡️ Stability & Safety Features
 
