@@ -12,44 +12,59 @@ SOFTWARE*/
 #include <sys/mman.h>
 #include <iostream>
 #include <cassert>
-#include <errno.h>
+//#include <errno.h>
 
-
+//CPU cache lines are 64 bytes so aligned as 64 bytes
+//so that ThreadFreeLists can match those cache lines
+//This specifically prevents false sharing.
 struct alignas(64) ThreadFreeLists {
     FreeBlock* heads[8] = {nullptr};
 };
 
+//used thread_local so that thread A and thread B can read/write
+//to same to variable name without locks or thread contention therefore removing
+//the need of mutexes. TLS allocates a completely independent, private instance 
+//of a global or static variable for each thread. it also eliminates race condition without mutexes,
+//where a change in thread A updates a global variable and thread b immediately sees
+//the modification.
 static thread_local ThreadFreeLists tls_lists;
 
+//using generic pointer(void*)
 void* map_memory(size_t size) {
+    //using mmap to map virtual ram directly on a virtual adress
+    //this will help reduce read write overhead
     void* ptr = mmap(nullptr, size,
                      PROT_READ | PROT_WRITE,
                      MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB,
                      -1, 0);
+    //if hugepage allocation fails falling vack to normal size page allocation
+    //instead of throwing an error this will reduce latency when trigerred
     if (ptr == MAP_FAILED) {
         ptr = mmap(nullptr, size,
                    PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANONYMOUS,
                    -1, 0);
     }
-
+    
     return (ptr == MAP_FAILED) ? nullptr : ptr;
 }
 
 static void refill_slab(size_t index) {
+    //this creates a perfect 16 bytes block:data_size+magic+padding
     size_t data_size = (index + 1) * 16; 
     size_t total_block_size = sizeof(BlockHeader) + data_size;
-
+    
+    //create a 2MB slab_size to be mapped
     size_t slab_size = 2 * 1024 * 1024; 
     char* memory = (char*)map_memory(slab_size);
-
+    
+    //optimized safety: explicitly stating that most probably
+    //the memory will be allocated and this expression will evaluate to false
     if (__builtin_expect(memory == nullptr, 0)) return;
-
 
     for (size_t i = 0; i < slab_size; i += 4096) {
         memory[i] = 0; 
     }
-    // -------------------------------------
 
     size_t block_count = slab_size / total_block_size;
     
@@ -110,7 +125,8 @@ void safe_free(void* ptr) {
         return;
     }
 
-    size_t index = (header->size / 16) - 1;
+    //fix the wrong index calculation error that was leading to 
+    size_t index = (header->size + 15)/ 16 - 1;
 
     if (index > 7) {
         size_t total_size = sizeof(BlockHeader) + header->size;

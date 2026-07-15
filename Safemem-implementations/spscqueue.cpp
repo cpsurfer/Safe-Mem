@@ -6,16 +6,18 @@
 #include <thread>
 using namespace std;
 
+
 struct Node {
     int value;
     atomic<Node*> next;
     Node(int val) : value(val), next(nullptr) {}
 };
 
+//Removed redundant atomic in tail since tail was not touched by consumer
 class safememSPSCqueue {
     private:    
         Node* head;         //consumer reads data here
-        atomic<Node*> tail; //producer enters new data here
+        Node* tail;         //producer enters new data here (Changed to plain pointer)
 
     public:
         safememSPSCqueue() {
@@ -24,7 +26,7 @@ class safememSPSCqueue {
                                                         //dummy node so that tail/head are not empty 
             
             head=dummy;
-            tail.store(dummy);   //atmoic store for safety
+            tail=dummy;   // plain assignment
         }
         
         //Producer thread works here 
@@ -32,12 +34,12 @@ class safememSPSCqueue {
             void* raw_mem=safemem(sizeof(Node));
             Node* newNode=new(raw_mem) Node(val);
             
-            Node* oldTail=tail.load(std::memory_order_relaxed);
+            Node* oldTail=tail; // plain read
 
             newNode->value=val;
             oldTail->next.store(newNode,std::memory_order_release);
 
-            tail.store(newNode,memory_order_relaxed);
+            tail=newNode; // plain assignment
         }
         
         //consumer thread works here
@@ -56,7 +58,6 @@ class safememSPSCqueue {
             return true;
         }
 };
-
 
 const int test=1000000;
 
